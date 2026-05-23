@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Turnstile } from "nextjs-turnstile";
 
 export default function LoginPage() {
   const router = useRouter();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -15,6 +18,12 @@ export default function LoginPage() {
     event.preventDefault();
 
     setMessage("");
+
+    if (!turnstileToken) {
+      setMessage("Please complete the human verification first.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -26,6 +35,7 @@ export default function LoginPage() {
         body: JSON.stringify({
           username,
           password,
+          turnstileToken,
         }),
       });
 
@@ -96,6 +106,22 @@ export default function LoginPage() {
             />
           </div>
 
+          <div className="flex justify-center">
+            <Turnstile
+              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
+              onSuccess={(token) => setTurnstileToken(token)}
+              onError={() => {
+                setTurnstileToken("");
+                setMessage("Human verification failed. Please try again.");
+              }}
+              onExpire={() => {
+                setTurnstileToken("");
+                setMessage("Human verification expired. Please verify again.");
+              }}
+              theme="dark"
+            />
+          </div>
+
           {message && (
             <p className="rounded-xl bg-slate-950 px-4 py-3 text-sm text-slate-300 border border-slate-800">
               {message}
@@ -104,7 +130,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !turnstileToken}
             className="w-full rounded-xl bg-cyan-500 px-5 py-3 font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading ? "Sending OTP..." : "Continue"}
