@@ -1,24 +1,21 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-export async function sendOtpEmail(to: string, otp: string) {
-  const emailUser = process.env.EMAIL_USER;
-  const emailPass = process.env.EMAIL_PASS;
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-  if (!emailUser || !emailPass) {
-    throw new Error("Email environment variables are missing.");
+export async function sendOtpEmail(otp: string) {
+  const receiverEmail = process.env.OTP_RECEIVER_EMAIL;
+
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY is missing.");
   }
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: emailUser,
-      pass: emailPass,
-    },
-  });
+  if (!receiverEmail) {
+    throw new Error("OTP_RECEIVER_EMAIL is missing.");
+  }
 
-  await transporter.sendMail({
-    from: `"Secure CRUD System" <${emailUser}>`,
-    to,
+  const { data, error } = await resend.emails.send({
+    from: "Secure CRUD System <onboarding@resend.dev>",
+    to: receiverEmail,
     subject: "Your OTP Code",
     html: `
       <div style="font-family: Arial, sans-serif;">
@@ -29,4 +26,11 @@ export async function sendOtpEmail(to: string, otp: string) {
       </div>
     `,
   });
+
+  if (error) {
+    console.error("Resend error:", error);
+    throw new Error("Failed to send OTP email.");
+  }
+
+  return data;
 }
