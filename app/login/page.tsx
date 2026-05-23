@@ -133,7 +133,7 @@ export default function LoginPage() {
             disabled={isLoading || !turnstileToken}
             className="w-full rounded-xl bg-cyan-500 px-5 py-3 font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isLoading ? "Sending OTP..." : "Continue"}
+            {isLoading ? "Sending OTP...89" : "Continue"}
           </button>
         </form>
       </section>
