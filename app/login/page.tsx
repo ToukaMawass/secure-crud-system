@@ -1,18 +1,52 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    console.log("Username:", username);
-    console.log("Password:", password);
+    setMessage("");
+    setIsLoading(true);
 
-    alert("Login form submitted. Backend will be added next.");
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.message || "Login failed.");
+        return;
+      }
+
+      localStorage.setItem("pendingUsername", data.username);
+
+      setMessage("OTP sent to your email.");
+
+      router.push("/verify-otp");
+    } catch (error) {
+      console.error(error);
+      setMessage("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -62,11 +96,18 @@ export default function LoginPage() {
             />
           </div>
 
+          {message && (
+            <p className="rounded-xl bg-slate-950 px-4 py-3 text-sm text-slate-300 border border-slate-800">
+              {message}
+            </p>
+          )}
+
           <button
             type="submit"
-            className="w-full rounded-xl bg-cyan-500 px-5 py-3 font-semibold text-slate-950 transition hover:bg-cyan-400"
+            disabled={isLoading}
+            className="w-full rounded-xl bg-cyan-500 px-5 py-3 font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Continue
+            {isLoading ? "Sending OTP..." : "Continue"}
           </button>
         </form>
       </section>
